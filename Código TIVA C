@@ -175,6 +175,7 @@ if (!medir) {
    Serial.println("Se envia el mensaje ");
    LCD_Midiendo();
    delay(10);
+   
   }
 
 
@@ -194,8 +195,9 @@ if (!guardar) {
      LCD_Guardando(); 
      delay(10);  
      LCD_Presentarpeso();
-     LCD_Print(rollPart, 0, 100, 2, 0x00,0xFFFF);
-     LCD_Print(pitchPart, 0, 120, 2, 0x00,0xFFFF);
+     LCD_Print(rollPart, 0, 60, 2, 0x00,0xFFFF);
+     LCD_Print(pitchPart, 0, 76, 2, 0x00,0xFFFF);
+     LCD_Bitmap(100,125,97,64, imgbalanza);
      
    }
 
@@ -232,8 +234,9 @@ if(Serial2.available()>0){
     Serial.println(rollPart);
     Serial.println(pitchPart);
    LCD_Presentarpeso();
-   LCD_Print(rollPart, 0, 100, 2, 0x00,0xFFFF);
-   LCD_Print(pitchPart, 0, 120, 2, 0x00,0xFFFF);
+   LCD_Print(rollPart, 0, 60, 2, 0x00,0xFFFF);
+   LCD_Print(pitchPart, 0, 76, 2, 0x00,0xFFFF);
+   LCD_Bitmap(100,125,97,64, imgbalanza);
 }  
 }
 
