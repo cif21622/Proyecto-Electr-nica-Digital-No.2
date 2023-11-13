@@ -181,6 +181,7 @@ if (!medir) {
 
 //Código para guardar en la memoria SD la toma del sensor 
 if (!guardar) {
+      Serial2.write('-');
       myFile = SD.open("test.txt", FILE_WRITE);
       if (myFile) {
       Serial.print("Writing in text...");
