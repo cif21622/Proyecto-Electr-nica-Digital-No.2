@@ -59,12 +59,7 @@ extern uint8_t fondo[];
 extern uint8_t imgbalanza [];
 
 
-//Variables utilizadas para mostrar texto en la pantalla 
-//Variables Globales 
-String text2 = "Guardando...";
-String text3 = " Guardado";
-String text4 = "Midiendo...";
-String text5 ;
+//Variables globales 
 
 
 
@@ -80,7 +75,6 @@ File myFile;
 
 //Se definen los valores de las variables para almacenar los valores del sensor, el cual es el peso de la balanza. Se definen como String los valores que se obtiene del ESP32 por medio de la comunicación UART 
 String LECTURASENSOR; 
-
 
 //Variables Gblobales 
 //Se definen las variables de los bótones 
@@ -98,6 +92,18 @@ volatile bool guardar = true;
 
 //Variable utilizada para recibir la comunicación desde el ESP32 
 char Receptor;
+// Variables para almacenar las partes
+char rollPart[30]; // Ajusta el tamaño según tus necesidades
+char pitchPart[30]; // Ajusta el tamaño según tus necesidades
+
+
+//Variables utilizadas para mostrar texto en la pantalla 
+//TEXTO
+String text1 = "    Giroscopio      ";
+String text2 = "Guardando...";
+String text3 = " Guardado";
+String text4 = "Midiendo...";
+String text5 ;
 
 
 //***************************************************************************************************************************************
@@ -113,7 +119,7 @@ void setup() {
   LCD_Init();
   LCD_Clear(0x00);
   FillRect(0, 0, 320, 239,0xFFFF);
-  String text1 = "    Giroscopio   ";
+  FillRect(0, 0, 320, 120,0xE145);
   LCD_Print(text1, 0, 20, 2, 0x00, 0xFFFF);
 //LCD_Sprite(int x, int y, int width, int height, unsigned char bitmap[],int columns, int index, char flip, char offset);
  
@@ -123,7 +129,7 @@ void setup() {
     x += 31;
  }
 
-
+ 
 //Setup programa 2 
 //Configuración del Pin de salida 
 pinMode(BUZZER_PIN, OUTPUT);
@@ -161,12 +167,15 @@ Serial.println("initialization done.");
 //***************************************************************************************************************************************
 void loop() {
 
+
 //Código para traer la memoria del sensor 
 if (!medir) {
    Serial2.write('+');
    medir = true; 
    Serial.println("Se envia el mensaje ");
+   LCD_Midiendo();
   }
+
 
 //Código para guardar en la memoria SD la toma del sensor 
 if (!guardar) {
@@ -180,9 +189,13 @@ if (!guardar) {
       }else {
         Serial.println("error opening datosdelgiroscopio.txt!");
       }
-     guardar = true; 
+     guardar = true;
+     LCD_Guardando(); 
      delay(10);  
-      
+     LCD_Presentarpeso();
+     LCD_Print(rollPart, 0, 100, 2, 0x00,0xFFFF);
+     LCD_Print(pitchPart, 0, 120, 2, 0x00,0xFFFF);
+     
    }
 
 
@@ -193,8 +206,36 @@ if(Serial2.available()>0){
   delay(200); 
   limpiarBuffer();
   Serial.println(LECTURASENSOR);
-  
+  // Convertir la String a un arreglo de caracteres (char[])
+  char cadenaOriginal[LECTURASENSOR.length() + 1];  // +1 para el carácter nulo
+  LECTURASENSOR.toCharArray(cadenaOriginal, sizeof(cadenaOriginal));
+
+  // Dividir la cadena en partes usando '\n' como delimitador 
+  char *token = strtok(cadenaOriginal, "\n");
+
+  // Almacenar la primera parte
+  if (token != NULL) {
+    strncpy(rollPart, token, sizeof(rollPart) - 1);
+    rollPart[sizeof(rollPart) - 1] = '\0';  // Agregar el carácter nulo al final
+    trim(rollPart); 
 }
+
+   // Obtener la siguiente parte
+   token = strtok(NULL, "\n");
+
+    // Almacenar la segunda parte
+    if (token != NULL) {
+      strncpy(pitchPart, token, sizeof(pitchPart) - 1);
+      pitchPart[sizeof(pitchPart) - 1] = '\0';  // Agregar el carácter nulo al final
+      trim(pitchPart);
+    Serial.println(rollPart);
+    Serial.println(pitchPart);
+}  
+}
+
+
+
+
 
 delay(10);
 
@@ -560,7 +601,7 @@ void LCD_Guardando(){
 
  LCD_Clear(0x00);
  FillRect(0, 0, 320, 239,0xFFFF);
- String text1 = "      Balanza   ";
+ String text1 = "      Giroscopio   ";
  LCD_Print(text1, 0, 20, 2, 0x00, 0xFFFF);
 //Definición del SUelo para la pantalla 
  for(int x = 0; x <319; x++){
@@ -568,7 +609,6 @@ void LCD_Guardando(){
     x += 31;
  }
  
-  
  LCD_Print(text2, 80, 120, 2, 0x00, 0xFFFF);
  for(int x = 0; x <320-33; x++){
     delay(5);
@@ -593,7 +633,6 @@ void LCD_Guardando(){
 void LCD_Midiendo(){
  LCD_Clear(0x00);
  FillRect(0, 0, 320, 239,0xFFFF);
- String text1 = "      Balanza   ";
  LCD_Print(text1, 0, 20, 2, 0x00, 0xFFFF);
 //Definición del SUelo para la pantalla 
  for(int x = 0; x <319; x++){
@@ -616,7 +655,6 @@ void LCD_Presentarpeso(){
  LCD_Clear(0x00);
  FillRect(0, 0, 320, 239,0xFFFF);
  FillRect(0, 0, 160, 200,0xFAC0);
- String text1 = "      Balanza   ";
  LCD_Print(text1, 0, 20, 2, 0x00,0xFFFF);
 //Definición del SUelo para la pantalla 
  for(int x = 0; x <319; x++){
@@ -649,27 +687,22 @@ void limpiarBuffer() {
   }
 }
 
-//Función para mnostrar sonido en el Buzzer cuando se almacena un valor de peso en la SD
-void playSavedSound() {
-  int savedSound[] = {523, 587, 659, 698, 784, 880, 988, 1047};
-  int duration = 100;
-  
-  for (int i = 0; i < 8; i++) {
-    tone(BUZZER_PIN, savedSound[i], duration);
-    delay(duration);
-  }
-  noTone(BUZZER_PIN);
-}
 
 
-//Función para mnostrar sonido en el Buzzer cuando se realiza una medición 
-void sendToneOnDataSend() {
-  int sendSound[] = {800, 1000, 1200, 1400, 1600, 1800, 2000, 1800};
-  int duration[] = {200, 200, 200, 200, 200, 200, 200, 200};
-  
-  for (int i = 0; i < 8; i++) {
-    tone(BUZZER_PIN, sendSound[i], duration[i]);
-    delay(duration[i]);
+
+
+void trim(char *str) {
+  // Eliminar espacios al principio
+  while (*str == ' ' || *str == '\t' || *str == '\n' || *str == '\r') {
+    str++;
   }
-  noTone(BUZZER_PIN);
+
+  // Eliminar espacios al final
+  char *end = str + strlen(str) - 1;
+  while (end > str && (*end == ' ' || *end == '\t' || *end == '\n' || *end == '\r')) {
+    end--;
+  }
+
+  // Agregar el carácter nulo al final de la cadena
+  *(end + 1) = '\0';
 }
