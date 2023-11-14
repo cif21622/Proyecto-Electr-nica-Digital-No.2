@@ -57,11 +57,7 @@ void LCD_Sprite(int x, int y, int width, int height, unsigned char bitmap[],int 
 //Definición de imagenes almocenado en la memoria 
 extern uint8_t fondo[];
 extern uint8_t imgbalanza [];
-
-
-//Variables globales 
-
-
+//La imgbalanza es la que representa la imagen del giroscopio y sus respectivos ángulos 
 
 
 //Union del Programa 2
@@ -85,16 +81,15 @@ String LECTURASENSOR;
 #define BUZZER_PIN 39
 
 
-
 //Se definen las variables para verificar el estado del bóton y verificar si se incrementa o decrementa el bóton, esto para poder hacer uso de las interrupciones 
 volatile bool medir = true; 
 volatile bool guardar = true;
 
 //Variable utilizada para recibir la comunicación desde el ESP32 
 char Receptor;
-// Variables para almacenar las partes
-char rollPart[30]; // Ajusta el tamaño según tus necesidades
-char pitchPart[30]; // Ajusta el tamaño según tus necesidades
+// Variables para almacenar las partes de la cadena recivida por la comunicación UART
+char rollPart[30]; // Primera parte de la lectura del sensor 
+char pitchPart[30]; // Segunda parte de la lectrua del sensor
 
 
 //Variables utilizadas para mostrar texto en la pantalla 
@@ -110,16 +105,19 @@ String text5 ;
 // Inicialización
 //***************************************************************************************************************************************
 void setup() {
-//
+// Se define el inicio de la comunicacion entre la TIVA C y la pantalla TFT
   SysCtlClockSet(SYSCTL_SYSDIV_2_5|SYSCTL_USE_PLL|SYSCTL_OSC_MAIN|SYSCTL_XTAL_16MHZ);
+  //Se inicia la comunicación serial 
   Serial.begin(115200);
   Serial2.begin(115200); 
   GPIOPadConfigSet(GPIO_PORTB_BASE, 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7, GPIO_STRENGTH_8MA, GPIO_PIN_TYPE_STD_WPU);
   Serial.println("Inicio");
   LCD_Init();
   LCD_Clear(0x00);
+  //Se define el fondo de la pantalla 
   FillRect(0, 0, 320, 239,0xFFFF);
   FillRect(0, 0, 320, 120,0xE145);
+  // Se escribe el mensaje inicial de la pantalla, el cual indica que es un giroscopio 
   LCD_Print(text1, 0, 20, 2, 0x00, 0xFFFF);
 //LCD_Sprite(int x, int y, int width, int height, unsigned char bitmap[],int columns, int index, char flip, char offset);
  
@@ -170,8 +168,11 @@ void loop() {
 
 //Código para traer la memoria del sensor 
 if (!medir) {
+  //Se envia mensaje al ESP32 para indicar que se haga la medición del sensor 
    Serial2.write('+');
+   //Lógica anti rebote
    medir = true; 
+   //Se muestra en la pantalla la secuencia del LCD para indicar que se estpa midiedo el valor del sensor
    Serial.println("Se envia el mensaje ");
    LCD_Midiendo();
    delay(10);
@@ -195,6 +196,7 @@ if (!guardar) {
         Serial.println("error opening datosdelgiroscopio.txt!");
       }
      guardar = true;
+     //Se muestra en la LCD que se está guardando el valor de la temperatura y luego se muestra la medida del sensor. Se muestra el ángulo de PITCH y ROLL
      LCD_Guardando(); 
      delay(10);  
      LCD_Presentarpeso();
@@ -208,10 +210,11 @@ if (!guardar) {
 
 
 //Recepción del Valor del Sensor
-
 if(Serial2.available()>0){ 
+  //Se almacena la lectura de la comunicación serial en una variable
   LECTURASENSOR = Serial2.readString();
   delay(200); 
+  //Se limpia el buffe de la comunicación 
   limpiarBuffer();
   Serial.println(LECTURASENSOR);
   // Convertir la String a un arreglo de caracteres (char[])
@@ -238,6 +241,7 @@ if(Serial2.available()>0){
       trim(pitchPart);
     Serial.println(rollPart);
     Serial.println(pitchPart);
+   //Se muestra en la LCD los valores medidos
    LCD_Presentarpeso();
    LCD_Print(rollPart, 0, 60, 2, 0x00,0xFFFF);
    LCD_Print(pitchPart, 0, 76, 2, 0x00,0xFFFF);
@@ -248,7 +252,7 @@ if(Serial2.available()>0){
 
 
 
-
+//Delay para que siga corriendo el código 
 delay(10);
 
 }
@@ -610,16 +614,17 @@ void LCD_Sprite(int x, int y, int width, int height, unsigned char bitmap[],int 
 //***************************************************************************************************************************************
 //Funcción para mostrar en Pantalla TFT LCD que se está guardando el peso en la SD y animación 
 void LCD_Guardando(){
-
+//Se limpia la pantalla 
  LCD_Clear(0x00);
  FillRect(0, 0, 320, 239,0xFFFF);
+//Se muestra el encabezado de la pantalla que es "ENcabezado"
  LCD_Print(text1, 0, 20, 2, 0x00, 0xFFFF);
 //Definición del SUelo para la pantalla 
  for(int x = 0; x <319; x++){
     LCD_Bitmap(x, 207, 32,32, tile);
     x += 31;
  }
- 
+ //Se muestra animación mientras se guarda el valor en la SD en ida 
  LCD_Print(text2, 80, 120, 2, 0x00, 0xFFFF);
  for(int x = 0; x <320-33; x++){
     delay(5);
@@ -627,7 +632,7 @@ void LCD_Guardando(){
     LCD_Sprite(x, 175, 16, 33, bunny,4, anim,0, 0);
     V_line( x - 1, 175, 33, 0xFFFF);
   }
-  
+  //Se muestra animación mientras se guarda en la SD en regreso
   for(int x = 320-33; x >0; x--){
     delay(5);
     int anim = (x/11)%8;  
@@ -652,7 +657,7 @@ void LCD_Midiendo(){
  }
  
  LCD_Print(text4, 80, 120, 2, 0x00, 0xFFFF);
-
+//Se muestra animación mientras se hace la medición del sensor 
    for(int x = 0; x <320; x++){
     delay(5);
     int anim2 = (x/11)%8;
@@ -661,7 +666,7 @@ void LCD_Midiendo(){
   
 }
 
-//Funcion para mostrar fondo al momento de mostrar el peso luego de hacer medición o guardar en la memoria 
+//Funcion para mostrar fondo al momento de mostrar el ángulo luego de hacer medición o guardar en la memoria 
 void LCD_Presentarpeso(){
  LCD_Clear(0x00);
  FillRect(0, 0, 320, 239,0xFFFF);
@@ -700,7 +705,7 @@ void limpiarBuffer() {
 
 
 
-
+//Función para separar la Cadena de strings recivida en 2 
 
 void trim(char *str) {
   // Eliminar espacios al principio
