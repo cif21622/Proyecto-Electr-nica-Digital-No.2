@@ -16,12 +16,12 @@ String StAngleRoll;
 String StAnglePitch;
 
 //Configuración de Neopixel
-#define PINNEO            6  // Pin de datos conectado a tu tira Neopixel
-#define NUMPIXELS      16  // Número de LEDs en tu tira Neopixel
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUMPIXELS, PINNEO, NEO_GRB + NEO_KHZ800);
-void colorWipe(uint32_t color, int wait);
-void theaterChase(uint32_t color, int wait);
-void rainbow(int wait);
+#define PIN 15  // Pin de datos conectado a tu tira Neopixel
+#define NUMPIXELS 24  // Número de LEDs en tu tira Neopixel
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+void colorWipe(byte red, byte green, byte blue, int SpeedDelay);
+void colorSolid(byte red, byte green, byte blue, int SpeedDelay);
+
 
 void gyro_signals(void) {
   Wire.beginTransmission(0x68);
@@ -64,7 +64,6 @@ void gyro_signals(void) {
 
 
 
-
 }
 void setup() {
 
@@ -79,11 +78,10 @@ void setup() {
   Wire.write(0x6B);
   Wire.write(0x00);
   Wire.endTransmission();
-  strip.begin();
-  strip.show(); // Inicializa todos los píxeles a 'apagado'
+  pixels.begin();
+  pixels.show(); // Inicializa todos los píxeles a 'apagado'
 }
 void loop() {
-
 
   if(Serial2.available()>0){
   //Lectura del comando recibido
@@ -111,66 +109,52 @@ void loop() {
   StAnglePitch = String(AnglePitch); 
   Serial2.print("Roll: ");
   Serial2.print(StAngleRoll);
-  Serial2.println(" Angulo");
+  Serial2.println(" Grados");
   Serial2.print("Pitch: ");
   Serial2.print(StAnglePitch);
-  Serial2.println(" Angulo");
+  Serial2.println(" Grados");
   Serial.print("Dato enviado");
-  void modoDos();
+  for(int i=0; i<8; i++){
+  colorWipe(0, 0, 255, 50); // Azul
+}
+  
 }
   if(comando == '-'){
-  void modoTres();
+  Serial.print("Guardado en SD");
+  for(int i=0; i<8; i++){
+  colorWipe(0, 255, 0, 50); // VERDE
 }
 }
-
-void modoUno();
+  }
+  colorSolid(255, 0, 0, 50); 
   delay(10);
 
 
 }
 
 
-// Función para el primer modo
-void modoUno() {
-  colorWipe(strip.Color(255, 0, 0), 50); // Animación de barrido de color rojo
-}
+// Función para llenar el anillo de NeoPixel con un color sólido y efecto de carga
+void colorWipe(byte red, byte green, byte blue, int SpeedDelay) {
+  int pos = 0; // Variable para rastrear la posición de carga
 
-void modoCuatro() {
-  colorWipe(strip.Color(0, 0, 0), 50); // Animación de barrido de color rojo
-}
+  for (int i = 0; i < pixels.numPixels(); i++) {
+    pixels.setPixelColor(pos, pixels.Color(red, green, blue)); // Enciende el pixel actual
+    pixels.show();
+    delay(SpeedDelay);
 
-// Función para el segundo modo
-void modoDos() {
-  theaterChase(strip.Color(0, 0, 255), 50); // Animación de persecución de teatro en azul
-}
-
-// Función para el tercer modo
-void modoTres() {
- theaterChase(strip.Color(0, 255,0 ), 50); // Animación de persecución de teatro en azul
-
-}
-
-// Función para el barrido de color
-void colorWipe(uint32_t color, int wait) {
-  for(int i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, color);
-    strip.show();
-    delay(wait);
+    // Apaga el pixel anterior
+    pixels.setPixelColor(pos, pixels.Color(0, 0, 0));
+    
+    // Avanza la posición de carga al siguiente pixel
+    pos = (pos + 1) % pixels.numPixels();
   }
 }
 
-// Función para la persecución de teatro
-void theaterChase(uint32_t color, int wait) {
-  for (int j = 0; j < 10; j++) {  // Ejecuta la animación 10 veces
-    for (int q = 0; q < 3; q++) {
-      for (int i = 0; i < strip.numPixels(); i = i + 3) {
-        strip.setPixelColor(i + q, color); // Activa cada tercer LED
-      }
-      strip.show();
-      delay(wait);
-      for (int i = 0; i < strip.numPixels(); i = i + 3) {
-        strip.setPixelColor(i + q, 0); // Apaga cada tercer LED
-      }
-    }
+// Función para llenar el anillo de NeoPixel con un color sólido
+void colorSolid(byte red, byte green, byte blue, int SpeedDelay) {
+  for (int i = 0; i < pixels.numPixels(); i++) {
+    pixels.setPixelColor(i, pixels.Color(red, green, blue));
   }
+  pixels.show();
+  delay(SpeedDelay);
 }
