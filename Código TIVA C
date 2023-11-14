@@ -181,10 +181,12 @@ if (!medir) {
 
 //Código para guardar en la memoria SD la toma del sensor 
 if (!guardar) {
-      Serial2.write('-');
       myFile = SD.open("test.txt", FILE_WRITE);
       if (myFile) {
       Serial.print("Writing in text...");
+      Serial2.write('-');
+      delay(10);
+      Serial.print("Mesaje 2 enviado");
       myFile.println("LOS VALORES DEL GIROSCOPIO SON LOS SIGUIENTES ");
       myFile.println(LECTURASENSOR);;   
       myFile.close();
@@ -196,6 +198,8 @@ if (!guardar) {
      LCD_Guardando(); 
      delay(10);  
      LCD_Presentarpeso();
+     String textoguardado = "     Guardado ";
+     LCD_Print(textoguardado, 0, 44, 2, 0x00,0xFFFF);
      LCD_Print(rollPart, 0, 60, 2, 0x00,0xFFFF);
      LCD_Print(pitchPart, 0, 76, 2, 0x00,0xFFFF);
      LCD_Bitmap(100,125,97,64, imgbalanza);
