@@ -180,4 +180,3 @@ void colorSolid(byte red, byte green, byte blue, int SpeedDelay) {
   pixels.show();
   delay(SpeedDelay);
 }
-
